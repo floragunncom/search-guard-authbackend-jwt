@@ -1,0 +1,149 @@
+/*
+ * Copyright 2016 by floragunn UG (haftungsbeschränkt) - All rights reserved
+ * 
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed here is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * 
+ * This software is free of charge for non-commercial and academic use. 
+ * For commercial use in a production environment you have to obtain a license 
+ * from https://floragunn.com
+ * 
+ */
+
+package com.floragunn.dlic.auth.http.jwt;
+
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+
+import org.elasticsearch.SpecialPermission;
+import org.elasticsearch.common.logging.ESLogger;
+import org.elasticsearch.common.logging.Loggers;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.rest.BytesRestResponse;
+import org.elasticsearch.rest.RestChannel;
+import org.elasticsearch.rest.RestRequest;
+import org.elasticsearch.rest.RestStatus;
+
+import com.floragunn.searchguard.auth.HTTPAuthenticator;
+import com.floragunn.searchguard.user.AuthCredentials;
+
+public class HTTPJwtAuthenticator implements HTTPAuthenticator {
+
+    static {
+        printLicenseInfo();
+    }
+    
+    protected final ESLogger log = Loggers.getLogger(this.getClass());
+    
+    private static final String BEARER = "bearer ";
+    private final JwtParser jwtParser;
+    private final String jwtHeaderName;
+    private final String jwtUrlParameter;
+    private final String rolesKey;
+    private final String subjectKey;
+
+    public HTTPJwtAuthenticator(final Settings settings) {
+        super();
+
+        String signingKey = settings.get("signing_key");
+        
+        if(signingKey == null || signingKey.length() == 0) {
+            log.error("signingKey must not be null or empty. JWT authentication will not work");
+            jwtParser = null;
+        } else {
+            jwtParser = Jwts.parser().setSigningKey(signingKey);
+        }
+        
+        jwtUrlParameter = settings.get("jwt_url_parameter");
+        jwtHeaderName = settings.get("jwt_header","Authorization");
+        rolesKey = settings.get("roles_key");
+        subjectKey = settings.get("subject_key");
+    }
+    
+    @Override
+    public AuthCredentials extractCredentials(final RestRequest request) {
+        final SecurityManager sm = System.getSecurityManager();
+
+        if (sm != null) {
+            sm.checkPermission(new SpecialPermission());
+        }
+
+        AuthCredentials creds = AccessController.doPrivileged(new PrivilegedAction<AuthCredentials>() {
+            @Override
+            public AuthCredentials run() {                        
+                return extractCredentials0(request);
+            }
+        });
+        
+        return creds;
+    }
+
+    private AuthCredentials extractCredentials0(final RestRequest request) {        
+        if (jwtParser == null) {
+            log.error("Missing Signing Key. JWT authentication will not work");
+            return null;
+        }
+        
+        String jwtToken = jwtUrlParameter==null?request.header(jwtHeaderName):request.param(jwtUrlParameter);
+        
+        if (jwtToken == null || jwtToken.length() == 0) {
+            log.debug("No JWT token found in '{}' {} header", jwtUrlParameter==null?jwtHeaderName:jwtUrlParameter, jwtUrlParameter==null?"header":"url parameter");
+            return null;
+        }
+        
+        final int index;
+        if((index = jwtToken.toLowerCase().indexOf(BEARER)) > -1) { //detect Bearer 
+            jwtToken = jwtToken.substring(index+BEARER.length());
+        }
+                
+        try {
+            final Claims claims = jwtParser.parseClaimsJws(jwtToken).getBody();
+            
+            String subject = claims.getSubject();
+            String[] roles = new String[0];
+            
+            if(subjectKey != null) {
+                subject = claims.get(subjectKey, String.class);
+            }
+            
+            if(rolesKey != null) {
+                final String rolesString = claims.get(rolesKey, String.class);
+                roles = rolesString.split(",");
+            }
+            
+            return new AuthCredentials(subject, roles).markComplete();            
+            
+        } catch (Exception e) {
+            log.error("Invalid or expired JWT token. {}",e,e.getMessage());
+            return null;
+        }
+    }
+
+    @Override
+    public boolean reRequestAuthentication(final RestChannel channel, AuthCredentials creds) {
+        final BytesRestResponse wwwAuthenticateResponse = new BytesRestResponse(RestStatus.UNAUTHORIZED);
+        wwwAuthenticateResponse.addHeader("WWW-Authenticate", "Bearer realm=\"Search Guard\"");
+        channel.sendResponse(wwwAuthenticateResponse);
+        return true;
+    }
+
+    @Override
+    public String getType() {
+        return "jwt";
+    }
+    
+    public static void printLicenseInfo() {
+        System.out.println("******************************************************");
+        System.out.println("Search Guard JWT (JSON Web Token) is not free software");
+        System.out.println("for commercial use in production.");
+        System.out.println("You have to obtain a license if you ");
+        System.out.println("use it in production.");
+        System.out.println("*****************************************************");
+    }
+}
