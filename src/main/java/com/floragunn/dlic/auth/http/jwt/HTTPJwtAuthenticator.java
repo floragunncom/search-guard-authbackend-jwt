@@ -21,10 +21,12 @@ import io.jsonwebtoken.Jwts;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.elasticsearch.ElasticsearchSecurityException;
 import org.elasticsearch.SpecialPermission;
-import org.elasticsearch.common.logging.ESLogger;
-import org.elasticsearch.common.logging.Loggers;
 import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.common.util.concurrent.ThreadContext;
 import org.elasticsearch.rest.BytesRestResponse;
 import org.elasticsearch.rest.RestChannel;
 import org.elasticsearch.rest.RestRequest;
@@ -39,7 +41,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         printLicenseInfo();
     }
     
-    protected final ESLogger log = Loggers.getLogger(this.getClass());
+    protected final Logger log = LogManager.getLogger(this.getClass());
     
     private static final String BEARER = "bearer ";
     private final JwtParser jwtParser;
@@ -66,8 +68,9 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         subjectKey = settings.get("subject_key");
     }
     
+    
     @Override
-    public AuthCredentials extractCredentials(final RestRequest request) {
+    public AuthCredentials extractCredentials(RestRequest request, ThreadContext context) throws ElasticsearchSecurityException {
         final SecurityManager sm = System.getSecurityManager();
 
         if (sm != null) {
@@ -93,7 +96,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         String jwtToken = jwtUrlParameter==null?request.header(jwtHeaderName):request.param(jwtUrlParameter);
         
         if (jwtToken == null || jwtToken.length() == 0) {
-            log.debug("No JWT token found in '{}' {} header", jwtUrlParameter==null?jwtHeaderName:jwtUrlParameter, jwtUrlParameter==null?"header":"url parameter");
+            log.debug("No JWT token found in '{}' {}", jwtUrlParameter==null?jwtHeaderName:jwtUrlParameter, jwtUrlParameter==null?"header":"url parameter");
             return null;
         }
         
@@ -127,7 +130,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
 
     @Override
     public boolean reRequestAuthentication(final RestChannel channel, AuthCredentials creds) {
-        final BytesRestResponse wwwAuthenticateResponse = new BytesRestResponse(RestStatus.UNAUTHORIZED);
+        final BytesRestResponse wwwAuthenticateResponse = new BytesRestResponse(RestStatus.UNAUTHORIZED,"");
         wwwAuthenticateResponse.addHeader("WWW-Authenticate", "Bearer realm=\"Search Guard\"");
         channel.sendResponse(wwwAuthenticateResponse);
         return true;

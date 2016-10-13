@@ -21,7 +21,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.test.rest.FakeRestRequest;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -44,7 +43,7 @@ public class HTTPJwtAuthenticatorTest {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", "Bearer "+jwsToken);
         
-        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNull(creds);
     }
     
@@ -61,7 +60,7 @@ public class HTTPJwtAuthenticatorTest {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", "Bearer "+jwsToken);
         
-        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNull(creds);
     }
     
@@ -78,7 +77,7 @@ public class HTTPJwtAuthenticatorTest {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", "Bearer "+jwsToken);
         
-        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNull(creds);
     }
     
@@ -95,7 +94,7 @@ public class HTTPJwtAuthenticatorTest {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", "Bearer "+jwsToken);
         
-        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNotNull(creds);
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
@@ -114,7 +113,7 @@ public class HTTPJwtAuthenticatorTest {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", jwsToken);
         
-        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNotNull(creds);
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
@@ -139,7 +138,7 @@ public class HTTPJwtAuthenticatorTest {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", jwsToken);
         
-        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNotNull(creds);
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(2, creds.getBackendRoles().size());
@@ -165,7 +164,7 @@ public class HTTPJwtAuthenticatorTest {
         Map<String, String> headers = new HashMap<String, String>();
         headers.put("Authorization", jwsToken);
         
-        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNotNull(creds);
         Assert.assertEquals("Dr. Who", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
@@ -190,7 +189,7 @@ public class HTTPJwtAuthenticatorTest {
         FakeRestRequest req = new FakeRestRequest(headers, new HashMap<String, String>());
         req.params().put("abc", jwsToken);
         
-        AuthCredentials creds = jwtAuth.extractCredentials(req);
+        AuthCredentials creds = jwtAuth.extractCredentials(req, null);
         Assert.assertNotNull(creds);
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
