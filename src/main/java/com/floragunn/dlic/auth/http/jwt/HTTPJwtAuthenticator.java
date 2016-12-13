@@ -32,6 +32,7 @@ import org.elasticsearch.rest.RestStatus;
 
 import com.floragunn.searchguard.auth.HTTPAuthenticator;
 import com.floragunn.searchguard.user.AuthCredentials;
+import com.google.common.base.Strings;
 
 public class HTTPJwtAuthenticator implements HTTPAuthenticator {
 
@@ -105,17 +106,14 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         try {
             final Claims claims = jwtParser.parseClaimsJws(jwtToken).getBody();
             
-            String subject = claims.getSubject();
-            String[] roles = new String[0];
+            final String subject = extractSubject(claims);
             
-            if(subjectKey != null) {
-                subject = claims.get(subjectKey, String.class);
+            if (subject == null) {
+            	log.info("No subject found in JWT token");
+            	return null;
             }
             
-            if(rolesKey != null) {
-                final String rolesString = claims.get(rolesKey, String.class);
-                roles = rolesString.split(",");
-            }
+            final String[] roles = extractRoles(claims);	
             
             return new AuthCredentials(subject, roles).markComplete();            
             
@@ -136,6 +134,42 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
     @Override
     public String getType() {
         return "jwt";
+    }
+    
+    private final String extractSubject(final Claims claims) {
+        String subject = claims.getSubject();        
+        if(subjectKey != null) {
+    		// try to get roles from claims, first as Object to avoid having to catch the ExpectedTypeException
+            Object subjectObject = claims.get(subjectKey, Object.class);
+            if(subjectObject == null) {
+                log.warn("Failed to get subject from JWT claims, check if subject_key '{}' is correct.", subjectKey);
+                return null;
+            }
+        	// We expect a String. If we find something else, convert to String but issue a warning    	
+            if(!(subjectObject instanceof String)) {
+        		log.warn("Expected type String for roles in the JWT for subject_key {}, but value was '{}' ({}). Will convert this value to String.", subjectKey, subjectObject, subjectObject.getClass());    					
+            }
+            subject = String.valueOf(subjectObject);
+        }
+        return subject;
+    }
+    
+    private final String[] extractRoles(final Claims claims) {
+    	// no roles key specified
+    	if(rolesKey == null) {
+    		return new String[0];
+    	}
+		// try to get roles from claims, first as Object to avoid having to catch the ExpectedTypeException
+    	final Object rolesObject = claims.get(rolesKey, Object.class);
+    	if(rolesObject == null) {
+    		log.info("Failed to get roles from JWT claims with roles_key '{}'. Check if this key is correct and available in the JWT payload.", rolesKey);   
+    		return new String[0];
+    	}
+    	// We expect a String. If we find something else, convert to String but issue a warning    	
+    	if (!(rolesObject instanceof String)) {
+    		log.warn("Expected type String for roles in the JWT for roles_key {}, but value was '{}' ({}). Will convert this value to String.", rolesKey, rolesObject, rolesObject.getClass());    					
+		}    	
+    	return String.valueOf(rolesObject).split(",");    	
     }
     
     public static void printLicenseInfo() {
