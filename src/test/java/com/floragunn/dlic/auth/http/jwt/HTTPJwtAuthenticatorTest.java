@@ -17,6 +17,7 @@ package com.floragunn.dlic.auth.http.jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -367,5 +368,48 @@ public class HTTPJwtAuthenticatorTest {
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
     }
-
+    
+    @Test
+    public void testExp() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .setSubject("Expired")
+                .setExpiration(new Date(100))
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNull(creds);
+    }
+    
+    @Test
+    public void testNbf() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .setSubject("Expired")
+                .setNotBefore(new Date(System.currentTimeMillis()+(1000*36000)))
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNull(creds);
+    }
 }
