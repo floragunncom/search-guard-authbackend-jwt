@@ -17,6 +17,7 @@ package com.floragunn.dlic.auth.http.jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,6 +47,23 @@ public class HTTPJwtAuthenticatorTest {
         AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNull(creds);
     }
+
+    @Test
+    public void testEmptyKey() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder().put("signing_key", "").build();
+        
+        String jwsToken = Jwts.builder().setSubject("Leonard McCoy").signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", "Bearer "+jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNull(creds);
+    }
     
     @Test
     public void testBadKey() throws Exception {
@@ -61,6 +79,20 @@ public class HTTPJwtAuthenticatorTest {
         headers.put("Authorization", "Bearer "+jwsToken);
         
         AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
+        Assert.assertNull(creds);
+    }
+
+    @Test
+    public void testTokenMissing() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder().put("signing_key", BaseEncoding.base64().encode(secretKey)).build();
+                
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+                
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
         Assert.assertNull(creds);
     }
     
@@ -98,6 +130,23 @@ public class HTTPJwtAuthenticatorTest {
         Assert.assertNotNull(creds);
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
+    }
+
+    @Test
+    public void testBearerWrongPosition() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder().put("signing_key", BaseEncoding.base64().encode(secretKey)).build();
+        
+        String jwsToken = Jwts.builder().setSubject("Leonard McCoy").signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken + "Bearer " + " 123");
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNull(creds);
     }
     
     @Test
@@ -143,6 +192,104 @@ public class HTTPJwtAuthenticatorTest {
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(2, creds.getBackendRoles().size());
     }
+
+    @Test
+    public void testNullClaim() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .put("roles_key", "roles")
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .setSubject("Leonard McCoy")
+                .claim("roles", null)
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNotNull(creds);
+        Assert.assertEquals("Leonard McCoy", creds.getUsername());
+        Assert.assertEquals(0, creds.getBackendRoles().size());
+    } 
+
+    @Test
+    public void testNonStringClaim() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .put("roles_key", "roles")
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .setSubject("Leonard McCoy")
+                .claim("roles", 123L)
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNotNull(creds);
+        Assert.assertEquals("Leonard McCoy", creds.getUsername());
+        Assert.assertEquals(1, creds.getBackendRoles().size());
+        Assert.assertTrue( creds.getBackendRoles().contains("123"));
+    }
+    
+    @Test
+    public void testRolesMissing() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .put("roles_key", "roles")
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .setSubject("Leonard McCoy")                
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNotNull(creds);
+        Assert.assertEquals("Leonard McCoy", creds.getUsername());
+        Assert.assertEquals(0, creds.getBackendRoles().size());
+    }    
+    
+    @Test
+    public void testWrongSubjectKey() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .put("subject_key", "missing")
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .claim("roles", "role1,role2")
+                .claim("asub", "Dr. Who")
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNull(creds);
+    }
     
     @Test
     public void testAlternativeSubject() throws Exception {
@@ -167,6 +314,32 @@ public class HTTPJwtAuthenticatorTest {
         AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNotNull(creds);
         Assert.assertEquals("Dr. Who", creds.getUsername());
+        Assert.assertEquals(0, creds.getBackendRoles().size());
+    }
+
+    @Test
+    public void testNonStringAlternativeSubject() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .put("subject_key", "asub")
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .setSubject("Leonard McCoy")
+                .claim("roles", "role1,role2")
+                .claim("asub", false)
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNotNull(creds);
+        Assert.assertEquals("false", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
     }
     
@@ -194,5 +367,48 @@ public class HTTPJwtAuthenticatorTest {
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
     }
-
+    
+    @Test
+    public void testExp() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .setSubject("Expired")
+                .setExpiration(new Date(100))
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNull(creds);
+    }
+    
+    @Test
+    public void testNbf() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .setSubject("Expired")
+                .setNotBefore(new Date(System.currentTimeMillis()+(1000*36000)))
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()));
+        Assert.assertNull(creds);
+    }
 }
