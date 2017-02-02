@@ -32,7 +32,6 @@ import org.elasticsearch.rest.RestStatus;
 
 import com.floragunn.searchguard.auth.HTTPAuthenticator;
 import com.floragunn.searchguard.user.AuthCredentials;
-import com.google.common.base.Strings;
 
 public class HTTPJwtAuthenticator implements HTTPAuthenticator {
 
