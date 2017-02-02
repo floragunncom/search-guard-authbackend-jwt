@@ -42,7 +42,7 @@ public class FakeRestRequest extends RestRequest {
     }
 
     private FakeRestRequest(Map<String, String> headers, Map<String, String> params, BytesReference content, Method method, String path) {
-        super(params, path);
+        super(null, params, path);
         this.headers = headers;
         this.content = content;
         this.method = method;
