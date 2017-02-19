@@ -96,7 +96,9 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         String jwtToken = jwtUrlParameter==null?request.header(jwtHeaderName):request.param(jwtUrlParameter);
         
         if (jwtToken == null || jwtToken.length() == 0) {
-            log.debug("No JWT token found in '{}' {}", jwtUrlParameter==null?jwtHeaderName:jwtUrlParameter, jwtUrlParameter==null?"header":"url parameter");
+            if(log.isDebugEnabled()) {
+                log.debug("No JWT token found in '{}' {} header", jwtUrlParameter==null?jwtHeaderName:jwtUrlParameter, jwtUrlParameter==null?"header":"url parameter");
+            }
             return null;
         }
         
@@ -111,7 +113,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
             final String subject = extractSubject(claims);
             
             if (subject == null) {
-            	log.info("No subject found in JWT token");
+            	log.error("No subject found in JWT token");
             	return null;
             }
             
@@ -120,7 +122,9 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
             return new AuthCredentials(subject, roles).markComplete();            
             
         } catch (Exception e) {
-            log.error("Invalid or expired JWT token. {}",e,e.getMessage());
+            if(log.isDebugEnabled()) {
+                log.debug("Invalid or expired JWT token. {}",e,e.getMessage());
+            }
             return null;
         }
     }
@@ -164,7 +168,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
 		// try to get roles from claims, first as Object to avoid having to catch the ExpectedTypeException
     	final Object rolesObject = claims.get(rolesKey, Object.class);
     	if(rolesObject == null) {
-    		log.info("Failed to get roles from JWT claims with roles_key '{}'. Check if this key is correct and available in the JWT payload.", rolesKey);   
+    		log.warn("Failed to get roles from JWT claims with roles_key '{}'. Check if this key is correct and available in the JWT payload.", rolesKey);   
     		return new String[0];
     	}
     	// We expect a String. If we find something else, convert to String but issue a warning    	
