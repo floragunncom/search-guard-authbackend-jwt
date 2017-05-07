@@ -30,7 +30,10 @@ All versions:
 **Choose the module version matching your Elasticsearch version, and download the jar with dependencies.**
 
 ## Documentation
-Documentation is provided in our [Search Guard JWT Wiki](https://github.com/floragunncom/search-guard-authbackend-jwt/wiki)
+
+Please refer to the official Search Guard documentation for installation and configuration instructions:
+
+[JSON web token documentation](https://github.com/floragunncom/search-guard-docs/blob/master/jwt.md)
 
 ## Commercial use
 This software is free of charge for non-commercial and academic use. For commercial use in a production environment you have to obtain a [license](https://floragunn.com/searchguard/searchguard-license-support/). 
