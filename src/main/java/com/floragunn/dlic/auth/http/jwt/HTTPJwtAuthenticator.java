@@ -110,14 +110,14 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         try {
             final Claims claims = jwtParser.parseClaimsJws(jwtToken).getBody();
             
-            final String subject = extractSubject(claims);
+            final String subject = extractSubject(claims, request);
             
             if (subject == null) {
             	log.error("No subject found in JWT token");
             	return null;
             }
             
-            final String[] roles = extractRoles(claims);	
+            final String[] roles = extractRoles(claims, request);	
             
             return new AuthCredentials(subject, roles).markComplete();            
             
@@ -142,7 +142,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         return "jwt";
     }
     
-    private final String extractSubject(final Claims claims) {
+    protected String extractSubject(final Claims claims, final RestRequest request) {
         String subject = claims.getSubject();        
         if(subjectKey != null) {
     		// try to get roles from claims, first as Object to avoid having to catch the ExpectedTypeException
@@ -160,7 +160,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         return subject;
     }
     
-    private final String[] extractRoles(final Claims claims) {
+    protected String[] extractRoles(final Claims claims, final RestRequest request) {
     	// no roles key specified
     	if(rolesKey == null) {
     		return new String[0];
