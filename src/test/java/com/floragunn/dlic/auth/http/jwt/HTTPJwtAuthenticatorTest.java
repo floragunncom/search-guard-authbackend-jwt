@@ -17,6 +17,10 @@ package com.floragunn.dlic.auth.http.jwt;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -410,5 +414,47 @@ public class HTTPJwtAuthenticatorTest {
         
         AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
         Assert.assertNull(creds);
+    }
+    
+    @Test
+    public void testRS256() throws Exception {
+        
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+        KeyPair pair = keyGen.generateKeyPair();
+        PrivateKey priv = pair.getPrivate();
+        PublicKey pub = pair.getPublic();
+    
+        String jwsToken = Jwts.builder().setSubject("Leonard McCoy").signWith(SignatureAlgorithm.RS256, priv).compact();
+        Settings settings = Settings.builder().put("signing_key", "-----BEGIN PUBLIC KEY-----\n"+BaseEncoding.base64().encode(pub.getEncoded())+"-----END PUBLIC KEY-----").build();
+
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", "Bearer "+jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
+        Assert.assertNotNull(creds);
+        Assert.assertEquals("Leonard McCoy", creds.getUsername());
+        Assert.assertEquals(0, creds.getBackendRoles().size());
+    }
+    
+    @Test
+    public void testES512() throws Exception {
+        
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("EC");
+        KeyPair pair = keyGen.generateKeyPair();
+        PrivateKey priv = pair.getPrivate();
+        PublicKey pub = pair.getPublic();
+    
+        String jwsToken = Jwts.builder().setSubject("Leonard McCoy").signWith(SignatureAlgorithm.ES512, priv).compact();
+        Settings settings = Settings.builder().put("signing_key", BaseEncoding.base64().encode(pub.getEncoded())).build();
+
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", "Bearer "+jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
+        Assert.assertNotNull(creds);
+        Assert.assertEquals("Leonard McCoy", creds.getUsername());
+        Assert.assertEquals(0, creds.getBackendRoles().size());
     }
 }

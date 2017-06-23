@@ -17,9 +17,16 @@ package com.floragunn.dlic.auth.http.jwt;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.impl.TextCodec;
 
 import java.security.AccessController;
+import java.security.Key;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,7 +66,31 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
             log.error("signingKey must not be null or empty. JWT authentication will not work");
             jwtParser = null;
         } else {
-            jwtParser = Jwts.parser().setSigningKey(signingKey);
+
+            signingKey = signingKey.replace("-----BEGIN PUBLIC KEY-----\n", "");
+            signingKey = signingKey.replace("-----END PUBLIC KEY-----", "");
+
+            byte[] decoded = TextCodec.BASE64.decode(signingKey);
+            Key key = null;
+
+            try {
+                key = getPublicKey(decoded, "RSA");
+            } catch (Exception e) {
+                log.debug("No public RSA key, try other algos ({})", e.toString());
+            }
+
+            try {
+                key = getPublicKey(decoded, "EC");
+            } catch (Exception e) {
+                log.debug("No public ECDSA key, try other algos ({})", e.toString());
+            }
+
+            if(key != null) {
+                jwtParser = Jwts.parser().setSigningKey(key);
+            } else {
+                jwtParser = Jwts.parser().setSigningKey(decoded);
+            }
+
         }
         
         jwtUrlParameter = settings.get("jwt_url_parameter");
@@ -124,6 +155,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         } catch (Exception e) {
             if(log.isDebugEnabled()) {
                 log.debug("Invalid or expired JWT token. {}",e,e.getMessage());
+                e.printStackTrace();
             }
             return null;
         }
@@ -176,6 +208,18 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
     		log.warn("Expected type String for roles in the JWT for roles_key {}, but value was '{}' ({}). Will convert this value to String.", rolesKey, rolesObject, rolesObject.getClass());    					
 		}    	
     	return String.valueOf(rolesObject).split(",");    	
+    }
+    
+    /*private static PrivateKey getPrivateKey(final byte[] keyBytes, final String algo) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
+        KeyFactory kf = KeyFactory.getInstance(algo);
+        return kf.generatePrivate(spec);
+    }*/
+
+    private static PublicKey getPublicKey(final byte[] keyBytes, final String algo) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
+        KeyFactory kf = KeyFactory.getInstance(algo);
+        return kf.generatePublic(spec);
     }
     
     public static void printLicenseInfo() {
