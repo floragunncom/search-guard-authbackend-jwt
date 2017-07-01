@@ -23,7 +23,10 @@ package com.floragunn.dlic.auth.http.jwt;
 import org.elasticsearch.common.bytes.BytesReference;
 import org.elasticsearch.rest.RestRequest;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 public class FakeRestRequest extends RestRequest {
@@ -42,7 +45,7 @@ public class FakeRestRequest extends RestRequest {
     }
 
     private FakeRestRequest(Map<String, String> headers, Map<String, String> params, BytesReference content, Method method, String path) {
-        super(null, params, path);
+        super(null, params, path, convert(headers));
         this.headers = headers;
         this.content = content;
         this.method = method;
@@ -66,16 +69,6 @@ public class FakeRestRequest extends RestRequest {
     @Override
     public BytesReference content() {
         return content;
-    }
-
-    @Override
-    public String header(String name) {
-        return headers.get(name);
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, String>> headers() {
-        return headers.entrySet();
     }
 
     public static class Builder {
@@ -119,6 +112,14 @@ public class FakeRestRequest extends RestRequest {
             return new FakeRestRequest(headers, params, content, method, path);
         }
 
+    }
+    
+    private static Map<String, List<String>> convert(Map<String, String> headers) {
+        Map<String, List<String>> ret = new HashMap<String, List<String>>();
+        for (String h:headers.keySet()) {
+            ret.put(h, Collections.singletonList(headers.get(h)));
+        }
+        return ret;
     }
 
 }
