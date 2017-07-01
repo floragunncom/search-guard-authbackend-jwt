@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 by floragunn UG (haftungsbeschränkt) - All rights reserved
+ * Copyright 2016-2017 by floragunn GmbH - All rights reserved
  * 
  *
  * Unless required by applicable law or agreed to in writing, software
@@ -124,7 +124,14 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
             return null;
         }
         
-        String jwtToken = jwtUrlParameter==null?request.header(jwtHeaderName):request.param(jwtUrlParameter);
+        String jwtToken = request.header(jwtHeaderName);
+        
+        if((jwtToken == null || jwtToken.isEmpty()) && jwtUrlParameter != null) {
+            jwtToken = request.param(jwtUrlParameter);
+        } else {
+            //just consume to avoid "contains unrecognized parameter"
+            request.param(jwtUrlParameter);
+        }
         
         if (jwtToken == null || jwtToken.length() == 0) {
             if(log.isDebugEnabled()) {
@@ -154,8 +161,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
             
         } catch (Exception e) {
             if(log.isDebugEnabled()) {
-                log.debug("Invalid or expired JWT token. {}",e,e.getMessage());
-                e.printStackTrace();
+                log.debug("Invalid or expired JWT token.", e);
             }
             return null;
         }
@@ -206,15 +212,16 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
     	// We expect a String. If we find something else, convert to String but issue a warning    	
     	if (!(rolesObject instanceof String)) {
     		log.warn("Expected type String for roles in the JWT for roles_key {}, but value was '{}' ({}). Will convert this value to String.", rolesKey, rolesObject, rolesObject.getClass());    					
-		}    	
-    	return String.valueOf(rolesObject).split(",");    	
+		}
+
+    	final String[] roles = String.valueOf(rolesObject).split(",");
+    	
+    	for (int i = 0; i < roles.length; i++) {
+    	    roles[i] = roles[i].trim();
+    	}
+    	
+    	return roles;
     }
-    
-    /*private static PrivateKey getPrivateKey(final byte[] keyBytes, final String algo) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
-        KeyFactory kf = KeyFactory.getInstance(algo);
-        return kf.generatePrivate(spec);
-    }*/
 
     private static PublicKey getPublicKey(final byte[] keyBytes, final String algo) throws NoSuchAlgorithmException, InvalidKeySpecException {
         X509EncodedKeySpec spec = new X509EncodedKeySpec(keyBytes);
@@ -222,12 +229,29 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         return kf.generatePublic(spec);
     }
     
-    public static void printLicenseInfo() {
-        System.out.println("******************************************************");
-        System.out.println("Search Guard JWT (JSON Web Token) is not free software");
-        System.out.println("for commercial use in production.");
-        System.out.println("You have to obtain a license if you ");
-        System.out.println("use it in production.");
-        System.out.println("*****************************************************");
+    private static void printLicenseInfo() {
+        final StringBuilder sb = new StringBuilder();
+        sb.append("******************************************************"+System.lineSeparator());
+        sb.append("Search Guard JWT (JSON Web Token) is not free software"+System.lineSeparator());
+        sb.append("for commercial use in production."+System.lineSeparator());
+        sb.append("You have to obtain a license if you "+System.lineSeparator());
+        sb.append("use it in production."+System.lineSeparator());
+        sb.append(System.lineSeparator());
+        sb.append("See https://floragunn.com/searchguard-validate-license"+System.lineSeparator());
+        sb.append("In case of any doubt mail to <sales@floragunn.com>"+System.lineSeparator());
+        sb.append("*****************************************************");
+        
+        final String licenseInfo = sb.toString();
+        
+        if(!Boolean.getBoolean("sg.display_lic_none")) {
+            
+            if(!Boolean.getBoolean("sg.display_lic_only_stdout")) {
+                LogManager.getLogger(HTTPJwtAuthenticator.class).warn(licenseInfo);
+                System.err.println(licenseInfo);
+            }
+    
+            System.out.println(licenseInfo);
+        }
+        
     }
 }
