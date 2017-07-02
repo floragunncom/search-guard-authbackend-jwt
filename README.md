@@ -7,7 +7,7 @@ This module for [Search Guard ](https://github.com/floragunncom/search-guard) ad
 
 ## Downloads
 
-* [Elasticsearch 5.x / JWT module 5.0-4](http://search.maven.org/remotecontent?filepath=com/floragunn/dlic-search-guard-auth-http-jwt/5.0-4/dlic-search-guard-auth-http-jwt-5.0-4-jar-with-dependencies.jar)
+* [Elasticsearch 5.x / JWT module 5.0-5](http://search.maven.org/remotecontent?filepath=com/floragunn/dlic-search-guard-auth-http-jwt/5.0-5/dlic-search-guard-auth-http-jwt-5.0-5-jar-with-dependencies.jar)
 
 * [Elasticsearch 2.4.x / JWT module 2.4-4](http://search.maven.org/remotecontent?filepath=com/floragunn/dlic-search-guard-auth-http-jwt/2.4-4/dlic-search-guard-auth-http-jwt-2.4-4-jar-with-dependencies.jar)
 
