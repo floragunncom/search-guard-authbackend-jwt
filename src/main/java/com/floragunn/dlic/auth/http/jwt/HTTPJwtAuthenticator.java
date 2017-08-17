@@ -27,6 +27,7 @@ import java.security.PrivilegedAction;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Collection;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,43 +61,50 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
     public HTTPJwtAuthenticator(final Settings settings) {
         super();
 
-        String signingKey = settings.get("signing_key");
+        JwtParser _jwtParser = null;
         
-        if(signingKey == null || signingKey.length() == 0) {
-            log.error("signingKey must not be null or empty. JWT authentication will not work");
-            jwtParser = null;
-        } else {
-
-            signingKey = signingKey.replace("-----BEGIN PUBLIC KEY-----\n", "");
-            signingKey = signingKey.replace("-----END PUBLIC KEY-----", "");
-
-            byte[] decoded = TextCodec.BASE64.decode(signingKey);
-            Key key = null;
-
-            try {
-                key = getPublicKey(decoded, "RSA");
-            } catch (Exception e) {
-                log.debug("No public RSA key, try other algos ({})", e.toString());
-            }
-
-            try {
-                key = getPublicKey(decoded, "EC");
-            } catch (Exception e) {
-                log.debug("No public ECDSA key, try other algos ({})", e.toString());
-            }
-
-            if(key != null) {
-                jwtParser = Jwts.parser().setSigningKey(key);
+        try {
+            String signingKey = settings.get("signing_key");
+            
+            if(signingKey == null || signingKey.length() == 0) {
+                log.error("signingKey must not be null or empty. JWT authentication will not work");
+                _jwtParser = null;
             } else {
-                jwtParser = Jwts.parser().setSigningKey(decoded);
-            }
 
+                signingKey = signingKey.replace("-----BEGIN PUBLIC KEY-----\n", "");
+                signingKey = signingKey.replace("-----END PUBLIC KEY-----", "");
+
+                byte[] decoded = TextCodec.BASE64.decode(signingKey);
+                Key key = null;
+
+                try {
+                    key = getPublicKey(decoded, "RSA");
+                } catch (Exception e) {
+                    log.debug("No public RSA key, try other algos ({})", e.toString());
+                }
+
+                try {
+                    key = getPublicKey(decoded, "EC");
+                } catch (Exception e) {
+                    log.debug("No public ECDSA key, try other algos ({})", e.toString());
+                }
+
+                if(key != null) {
+                    _jwtParser = Jwts.parser().setSigningKey(key);
+                } else {
+                    _jwtParser = Jwts.parser().setSigningKey(decoded);
+                }
+
+            }  
+        } catch (Throwable e) {
+            log.error("Error creating JWT authenticator: "+e+". JWT authentication will not work", e);
         }
         
         jwtUrlParameter = settings.get("jwt_url_parameter");
         jwtHeaderName = settings.get("jwt_header","Authorization");
         rolesKey = settings.get("roles_key");
         subjectKey = settings.get("subject_key");
+        jwtParser = _jwtParser;
     }
     
     
@@ -198,6 +206,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
         return subject;
     }
     
+    @SuppressWarnings("unchecked")
     protected String[] extractRoles(final Claims claims, final RestRequest request) {
     	// no roles key specified
     	if(rolesKey == null) {
@@ -209,12 +218,15 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
     		log.warn("Failed to get roles from JWT claims with roles_key '{}'. Check if this key is correct and available in the JWT payload.", rolesKey);   
     		return new String[0];
     	}
+    	
+    	String[] roles = String.valueOf(rolesObject).split(",");
+    	
     	// We expect a String. If we find something else, convert to String but issue a warning    	
-    	if (!(rolesObject instanceof String)) {
-    		log.warn("Expected type String for roles in the JWT for roles_key {}, but value was '{}' ({}). Will convert this value to String.", rolesKey, rolesObject, rolesObject.getClass());    					
+    	if (!(rolesObject instanceof String) && !(rolesObject instanceof Collection<?>)) {
+    		log.warn("Expected type String or Collection for roles in the JWT for roles_key {}, but value was '{}' ({}). Will convert this value to String.", rolesKey, rolesObject, rolesObject.getClass());    					
+		} else if (rolesObject instanceof Collection<?>) {
+		    roles = ((Collection<String>) rolesObject).toArray(new String[0]);
 		}
-
-    	final String[] roles = String.valueOf(rolesObject).split(",");
     	
     	for (int i = 0; i < roles.length; i++) {
     	    roles[i] = roles[i].trim();

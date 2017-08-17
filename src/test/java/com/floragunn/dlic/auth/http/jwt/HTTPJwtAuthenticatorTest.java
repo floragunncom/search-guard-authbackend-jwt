@@ -14,6 +14,7 @@
 
 package com.floragunn.dlic.auth.http.jwt;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
@@ -457,4 +458,35 @@ public class HTTPJwtAuthenticatorTest {
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
     }
+    
+    @Test
+    public void rolesArray() throws Exception {
+        
+        byte[] secretKey = new byte[]{1,2,3,4,5,6,7,8,9,10};
+        
+        Settings settings = Settings.builder()
+                .put("signing_key", BaseEncoding.base64().encode(secretKey))
+                .put("roles_key", "roles")
+                .build();
+        
+        String jwsToken = Jwts.builder()
+                .setPayload("{"+
+                    "\"sub\": \"John Doe\","+
+                    "\"roles\": [\"a\",\"b\",\"3rd\"]"+
+                  "}")
+                .signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        
+        HTTPJwtAuthenticator jwtAuth =new HTTPJwtAuthenticator(settings);
+        Map<String, String> headers = new HashMap<String, String>();
+        headers.put("Authorization", "Bearer "+jwsToken);
+        
+        AuthCredentials creds = jwtAuth.extractCredentials(new FakeRestRequest(headers, new HashMap<String, String>()), null);
+        Assert.assertNotNull(creds);
+        Assert.assertEquals("John Doe", creds.getUsername());
+        Assert.assertEquals(3, creds.getBackendRoles().size());
+        Assert.assertTrue(creds.getBackendRoles().contains("a"));
+        Assert.assertTrue(creds.getBackendRoles().contains("b"));
+        Assert.assertTrue(creds.getBackendRoles().contains("3rd"));
+    }
+       
 }
