@@ -221,7 +221,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
     	
     	String[] roles = String.valueOf(rolesObject).split(",");
     	
-    	// We expect a String. If we find something else, convert to String but issue a warning    	
+    	// We expect a String or Collectio. If we find something else, convert to String but issue a warning    	
     	if (!(rolesObject instanceof String) && !(rolesObject instanceof Collection<?>)) {
     		log.warn("Expected type String or Collection for roles in the JWT for roles_key {}, but value was '{}' ({}). Will convert this value to String.", rolesKey, rolesObject, rolesObject.getClass());    					
 		} else if (rolesObject instanceof Collection<?>) {
