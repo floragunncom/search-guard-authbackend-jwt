@@ -19,6 +19,7 @@ import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.impl.TextCodec;
 
+import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -58,7 +59,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
     private final String rolesKey;
     private final String subjectKey;
 
-    public HTTPJwtAuthenticator(final Settings settings) {
+    public HTTPJwtAuthenticator(final Settings settings, final Path configPath) {
         super();
 
         JwtParser _jwtParser = null;
