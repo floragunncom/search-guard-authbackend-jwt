@@ -7,16 +7,10 @@ This module for [Search Guard ](https://github.com/floragunncom/search-guard) ad
 
 ## Downloads
 
-* [Elasticsearch 5.x / JWT module 5.0-5](http://search.maven.org/remotecontent?filepath=com/floragunn/dlic-search-guard-auth-http-jwt/5.0-5/dlic-search-guard-auth-http-jwt-5.0-5-jar-with-dependencies.jar)
+**Choose the module version matching your Elasticsearch version, and download the jar with dependencies here:**
 
-* [Elasticsearch 2.4.x / JWT module 2.4-4](http://search.maven.org/remotecontent?filepath=com/floragunn/dlic-search-guard-auth-http-jwt/2.4-4/dlic-search-guard-auth-http-jwt-2.4-4-jar-with-dependencies.jar)
+https://github.com/floragunncom/search-guard-authbackend-jwt/wiki
 
-* [Elasticsearch 2.3.x / JWT module 2.3-4](http://search.maven.org/remotecontent?filepath=com/floragunn/dlic-search-guard-auth-http-jwt/2.3-4/dlic-search-guard-auth-http-jwt-2.3-4-jar-with-dependencies.jar)
-
-All versions:
-[Maven central](http://search.maven.org/#search%7Cgav%7C1%7Cg%3A%22com.floragunn%22%20AND%20a%3A%22dlic-search-guard-auth-http-jwt%22)
-
-**Choose the module version matching your Elasticsearch version, and download the jar with dependencies.**
 
 ## Installation
 
@@ -40,7 +34,7 @@ Please refer to the official Search Guard documentation for installation and con
 This software is free of charge for non-commercial and academic use. For commercial use in a production environment you have to obtain a [license](https://floragunn.com/searchguard/searchguard-license-support/). 
 
 ## License
-Copyright 2016 by floragunn GmbH - All rights reserved 
+Copyright 2016-2017 by floragunn GmbH - All rights reserved 
 
 Unless required by applicable law or agreed to in writing, software
 distributed here is distributed on an "AS IS" BASIS,
