@@ -14,7 +14,6 @@
 
 package com.floragunn.dlic.auth.http.jwt;
 
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 

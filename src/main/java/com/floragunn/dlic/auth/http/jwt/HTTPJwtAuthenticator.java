@@ -69,7 +69,6 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
             
             if(signingKey == null || signingKey.length() == 0) {
                 log.error("signingKey must not be null or empty. JWT authentication will not work");
-                _jwtParser = null;
             } else {
 
                 signingKey = signingKey.replace("-----BEGIN PUBLIC KEY-----\n", "");

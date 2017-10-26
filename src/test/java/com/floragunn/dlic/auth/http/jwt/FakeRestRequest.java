@@ -20,18 +20,17 @@ package com.floragunn.dlic.auth.http.jwt;
  */
 
 
-import org.elasticsearch.common.bytes.BytesReference;
-import org.elasticsearch.rest.RestRequest;
-
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.elasticsearch.common.bytes.BytesReference;
+import org.elasticsearch.rest.RestRequest;
+
 public class FakeRestRequest extends RestRequest {
 
-    private final Map<String, String> headers;
+    //private final Map<String, String> headers;
     private final BytesReference content;
     private final Method method;
 
@@ -46,7 +45,7 @@ public class FakeRestRequest extends RestRequest {
 
     private FakeRestRequest(Map<String, String> headers, Map<String, String> params, BytesReference content, Method method, String path) {
         super(null, params, path, convert(headers));
-        this.headers = headers;
+        //this.headers = headers;
         this.content = content;
         this.method = method;
     }
