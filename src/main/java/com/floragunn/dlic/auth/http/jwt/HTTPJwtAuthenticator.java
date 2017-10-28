@@ -29,6 +29,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Collection;
+import java.util.Map.Entry;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -163,7 +164,13 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
             	return null;
             }
             
-            final String[] roles = extractRoles(claims, request);	
+            final String[] roles = extractRoles(claims, request);
+            
+            final AuthCredentials ac = new AuthCredentials(subject, roles).markComplete(); 
+            
+            for(Entry<String, Object> claim: claims.entrySet()) {
+                ac.addAttribute("attr.jwt."+claim.getKey(), String.valueOf(claim.getValue()));
+            }
             
             return new AuthCredentials(subject, roles).markComplete();            
             
@@ -221,7 +228,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
     	
     	String[] roles = String.valueOf(rolesObject).split(",");
     	
-    	// We expect a String or Collectio. If we find something else, convert to String but issue a warning    	
+    	// We expect a String or Collection. If we find something else, convert to String but issue a warning    	
     	if (!(rolesObject instanceof String) && !(rolesObject instanceof Collection<?>)) {
     		log.warn("Expected type String or Collection for roles in the JWT for roles_key {}, but value was '{}' ({}). Will convert this value to String.", rolesKey, rolesObject, rolesObject.getClass());    					
 		} else if (rolesObject instanceof Collection<?>) {
