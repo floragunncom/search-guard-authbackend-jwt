@@ -48,7 +48,7 @@ import com.floragunn.searchguard.user.AuthCredentials;
 public class HTTPJwtAuthenticator implements HTTPAuthenticator {
 
     static {
-        printLicenseInfo();
+        //printLicenseInfo();
     }
     
     protected final Logger log = LogManager.getLogger(this.getClass());
