@@ -1,5 +1,3 @@
-package com.floragunn.dlic.auth.http.jwt;
-
 /*
  * Licensed to Elasticsearch under one or more contributor
  * license agreements. See the NOTICE file distributed with
@@ -19,6 +17,7 @@ package com.floragunn.dlic.auth.http.jwt;
  * under the License.
  */
 
+package com.floragunn.dlic.auth.http.jwt;
 
 import java.util.Collections;
 import java.util.HashMap;
