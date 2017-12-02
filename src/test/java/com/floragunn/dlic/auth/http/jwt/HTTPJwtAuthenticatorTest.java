@@ -124,7 +124,7 @@ public class HTTPJwtAuthenticatorTest {
         
         Settings settings = Settings.builder().put("signing_key", BaseEncoding.base64().encode(secretKey)).build();
         
-        String jwsToken = Jwts.builder().setSubject("Leonard McCoy").signWith(SignatureAlgorithm.HS512, secretKey).compact();
+        String jwsToken = Jwts.builder().setSubject("Leonard McCoy").setAudience("myaud").signWith(SignatureAlgorithm.HS512, secretKey).compact();
         
         HTTPJwtAuthenticator jwtAuth = new HTTPJwtAuthenticator(settings, null);
         Map<String, String> headers = new HashMap<String, String>();
@@ -134,6 +134,7 @@ public class HTTPJwtAuthenticatorTest {
         Assert.assertNotNull(creds);
         Assert.assertEquals("Leonard McCoy", creds.getUsername());
         Assert.assertEquals(0, creds.getBackendRoles().size());
+        Assert.assertEquals(2, creds.getAttributes().size());
     }
 
     @Test

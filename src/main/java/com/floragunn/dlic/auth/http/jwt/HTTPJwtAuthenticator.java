@@ -172,7 +172,7 @@ public class HTTPJwtAuthenticator implements HTTPAuthenticator {
                 ac.addAttribute("attr.jwt."+claim.getKey(), String.valueOf(claim.getValue()));
             }
             
-            return new AuthCredentials(subject, roles).markComplete();            
+            return ac;        
             
         } catch (Exception e) {
             if(log.isDebugEnabled()) {
