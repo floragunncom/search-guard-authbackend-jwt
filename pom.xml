@@ -24,7 +24,7 @@
     <inceptionYear>2016</inceptionYear>
 
     <properties>
-        <sg2.version>6.1-20.0-api</sg2.version>
+        <sg2.version>6.2-21.0-api</sg2.version>
         <elasticsearch.version>6.1.0</elasticsearch.version>
         <dependency.locations.enabled>false</dependency.locations.enabled>
     </properties>
@@ -68,7 +68,7 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
-            <version>0.8.0</version>
+            <version>0.9.0</version>
             <exclusions>
                 <exclusion>
                     <artifactId>jackson-databind</artifactId>
@@ -80,13 +80,31 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.8.6</version>
+            <version>2.8.11</version>
             <exclusions>
                 <exclusion>
                     <artifactId>jackson-core</artifactId>
                     <groupId>com.fasterxml.jackson.core</groupId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        
+       <dependency>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpasyncclient</artifactId>
+          <version>4.1.2</version>
+        </dependency>
+        
+        <dependency>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>httpclient-cache</artifactId>
+          <version>4.5.3</version>
+        </dependency>
+        
+        <dependency>
+          <groupId>org.apache.cxf</groupId>
+          <artifactId>cxf-rt-rs-security-jose</artifactId>
+          <version>3.2.2</version>
         </dependency>
 
         <!-- Only test scoped dependencies hereafter -->
@@ -101,6 +119,14 @@
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.floragunn</groupId>
+            <artifactId>search-guard-6</artifactId>
+            <version>${sg2.version}</version>
+            <scope>test</scope>
+            <classifier>tests</classifier>
         </dependency>
 
     </dependencies>
