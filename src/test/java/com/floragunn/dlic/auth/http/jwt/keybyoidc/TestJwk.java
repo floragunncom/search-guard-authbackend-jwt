@@ -21,7 +21,7 @@ import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
 import org.apache.cxf.rs.security.jose.jwk.KeyType;
 import org.apache.cxf.rs.security.jose.jwk.PublicKeyUse;
 
-class TestJwks {
+class TestJwk {
 
 	// Keys generated with https://mkjwk.org/
 
@@ -58,8 +58,13 @@ class TestJwks {
 
 	static final JsonWebKeys RSA_1_2_PUBLIC = createJwks(RSA_1_PUBLIC, RSA_2_PUBLIC);
 
-	static final JsonWebKeys ALL = createJwks(OCT_1, OCT_2, OCT_3, RSA_1_PUBLIC, RSA_2_PUBLIC);
-
+	static class Jwks {
+		static final JsonWebKeys ALL = createJwks(OCT_1, OCT_2, OCT_3, RSA_1_PUBLIC, RSA_2_PUBLIC);
+		static final JsonWebKeys RSA_1 = createJwks(RSA_1_PUBLIC);
+		static final JsonWebKeys RSA_2 = createJwks(RSA_2_PUBLIC);
+	}
+	
+		
 	private static JsonWebKey createOct(String keyId, String algorithm, String k) {
 		JsonWebKey result = new JsonWebKey();
 

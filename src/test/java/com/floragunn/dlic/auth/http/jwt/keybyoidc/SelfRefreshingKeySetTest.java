@@ -26,22 +26,27 @@ import org.junit.Test;
 public class SelfRefreshingKeySetTest {
 
 	@Test
-	public void basicTest() {
+	public void basicTest() throws AuthenticatorUnavailableException, BadCredentialsException {
 		SelfRefreshingKeySet selfRefreshingKeySet = new SelfRefreshingKeySet(new MockKeySetProvider());
 
-		JsonWebKey key1 = selfRefreshingKeySet.getKeyByKid("kid_a");
-		Assert.assertEquals(TestJwks.OCT_1_K, key1.getProperty("k"));
+		JsonWebKey key1 = selfRefreshingKeySet.getKey("kid_a");
+		Assert.assertEquals(TestJwk.OCT_1_K, key1.getProperty("k"));
 		Assert.assertEquals(1, selfRefreshingKeySet.getRefreshCount());
 
-		JsonWebKey key2 = selfRefreshingKeySet.getKeyByKid("kid_b");
-		Assert.assertEquals(TestJwks.OCT_2_K, key2.getProperty("k"));
+		JsonWebKey key2 = selfRefreshingKeySet.getKey("kid_b");
+		Assert.assertEquals(TestJwk.OCT_2_K, key2.getProperty("k"));
 		Assert.assertEquals(1, selfRefreshingKeySet.getRefreshCount());
 
-		JsonWebKey keyX = selfRefreshingKeySet.getKeyByKid("kid_X");
-		Assert.assertNull(keyX);
-		Assert.assertEquals(2, selfRefreshingKeySet.getRefreshCount());
-
+		try {
+			selfRefreshingKeySet.getKey("kid_X");
+			Assert.fail("Expected a BadCredentialsException");
+		} catch (BadCredentialsException e) {
+			Assert.assertEquals(2, selfRefreshingKeySet.getRefreshCount());			
+		}
+		
 	}
+	
+	
 
 	@Test(timeout = 10000)
 	public void twoThreadedTest() throws Exception {
@@ -51,11 +56,11 @@ public class SelfRefreshingKeySetTest {
 
 		ExecutorService executorService = Executors.newCachedThreadPool();
 
-		Future<JsonWebKey> f1 = executorService.submit(() -> selfRefreshingKeySet.getKeyByKid("kid_a"));
+		Future<JsonWebKey> f1 = executorService.submit(() -> selfRefreshingKeySet.getKey("kid_a"));
 
 		provider.waitForCalled();
 
-		Future<JsonWebKey> f2 = executorService.submit(() -> selfRefreshingKeySet.getKeyByKid("kid_b"));
+		Future<JsonWebKey> f2 = executorService.submit(() -> selfRefreshingKeySet.getKey("kid_b"));
 
 		while (selfRefreshingKeySet.getQueuedGetCount() == 0) {
 			Thread.sleep(10);
@@ -63,8 +68,8 @@ public class SelfRefreshingKeySetTest {
 
 		provider.unblock();
 
-		Assert.assertEquals(TestJwks.OCT_1_K, f1.get().getProperty("k"));
-		Assert.assertEquals(TestJwks.OCT_2_K, f2.get().getProperty("k"));
+		Assert.assertEquals(TestJwk.OCT_1_K, f1.get().getProperty("k"));
+		Assert.assertEquals(TestJwk.OCT_2_K, f2.get().getProperty("k"));
 
 		Assert.assertEquals(1, selfRefreshingKeySet.getRefreshCount());
 		Assert.assertEquals(1, selfRefreshingKeySet.getQueuedGetCount());
@@ -75,7 +80,7 @@ public class SelfRefreshingKeySetTest {
 
 		@Override
 		public JsonWebKeys get() throws AuthenticatorUnavailableException {
-			return TestJwks.OCT_1_2_3;
+			return TestJwk.OCT_1_2_3;
 		}
 
 	}

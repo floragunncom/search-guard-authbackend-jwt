@@ -35,6 +35,7 @@ import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.cxf.rs.security.jose.jwk.JsonWebKeys;
 import org.apache.http.HttpConnectionFactory;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -63,15 +64,17 @@ class MockIpdServer implements Closeable {
 	private final int port;
 	private final String uri;
 	private final boolean ssl;
+	private final JsonWebKeys jwks;
 
-	MockIpdServer() throws IOException {
-		this(8081, false);
+	MockIpdServer(JsonWebKeys jwks) throws IOException {
+		this(jwks, 8081, false);
 	}
 
-	MockIpdServer(int port, boolean ssl) throws IOException {
+	MockIpdServer(JsonWebKeys jwks, int port, boolean ssl) throws IOException {
 		this.port = port;
 		this.uri = (ssl ? "https" : "http") + "://localhost:" + port;
 		this.ssl = ssl;
+		this.jwks = jwks;
 
 		ServerBootstrap serverBootstrap = ServerBootstrap.bootstrap().setListenerPort(port)
 				.registerHandler(CTX_DISCOVER, new HttpRequestHandler() {
@@ -108,10 +111,10 @@ class MockIpdServer implements Closeable {
 
 						@Override
 						public DefaultBHttpServerConnection createConnection(final Socket socket) throws IOException {
-							final SSLTestHttpServerConnection conn = new SSLTestHttpServerConnection(this.cconfig.getBufferSize(),
-									this.cconfig.getFragmentSizeHint(), ConnSupport.createDecoder(this.cconfig),
-									ConnSupport.createEncoder(this.cconfig), this.cconfig.getMessageConstraints(), null,
-									null, null, null);
+							final SSLTestHttpServerConnection conn = new SSLTestHttpServerConnection(
+									this.cconfig.getBufferSize(), this.cconfig.getFragmentSizeHint(),
+									ConnSupport.createDecoder(this.cconfig), ConnSupport.createEncoder(this.cconfig),
+									this.cconfig.getMessageConstraints(), null, null, null, null);
 							conn.bind(socket);
 							return conn;
 						}
@@ -155,7 +158,7 @@ class MockIpdServer implements Closeable {
 	protected void handleKeysRequest(HttpRequest request, HttpResponse response, HttpContext context)
 			throws HttpException, IOException {
 		response.setStatusCode(200);
-		response.setEntity(new StringEntity(toJson(TestJwks.ALL)));
+		response.setEntity(new StringEntity(toJson(jwks)));
 	}
 
 	private SSLContext createSSLContext() {
@@ -182,15 +185,15 @@ class MockIpdServer implements Closeable {
 			SSLContext sslContext = SSLContext.getInstance("TLSv1.2");
 			sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
 			return sslContext;
-		} catch (final GeneralSecurityException | IOException exc) {
-			throw new RuntimeException(exc);
+		} catch (GeneralSecurityException | IOException e) {
+			throw new RuntimeException(e);
 		}
 	}
 
 	static class SSLTestHttpServerConnection extends DefaultBHttpServerConnection {
-		public SSLTestHttpServerConnection(final int buffersize, final int fragmentSizeHint, final CharsetDecoder chardecoder,
-				final CharsetEncoder charencoder, final MessageConstraints constraints,
-				final ContentLengthStrategy incomingContentStrategy,
+		public SSLTestHttpServerConnection(final int buffersize, final int fragmentSizeHint,
+				final CharsetDecoder chardecoder, final CharsetEncoder charencoder,
+				final MessageConstraints constraints, final ContentLengthStrategy incomingContentStrategy,
 				final ContentLengthStrategy outgoingContentStrategy,
 				final HttpMessageParserFactory<HttpRequest> requestParserFactory,
 				final HttpMessageWriterFactory<HttpResponse> responseWriterFactory) {

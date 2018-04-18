@@ -41,14 +41,20 @@ class TestJwts {
 	static final JwtToken MC_COY_EXPIRED = create(MCCOY_SUBJECT, TEST_AUDIENCE, ROLES_CLAIM, TEST_ROLES_STRING,
 			JwtConstants.CLAIM_EXPIRY, 10);
 
-	static final String MC_COY_SIGNED_OCT_1 = createSigned(MC_COY, TestJwks.OCT_1);
+	static final String MC_COY_SIGNED_OCT_1 = createSigned(MC_COY, TestJwk.OCT_1);
 
-	static final String MC_COY_SIGNED_RSA_1 = createSigned(MC_COY, TestJwks.RSA_1);
+	static final String MC_COY_SIGNED_RSA_1 = createSigned(MC_COY, TestJwk.RSA_1);
 
-	static final String MC_COY_SIGNED_RSA_X = createSigned(MC_COY, TestJwks.RSA_X);
+	static final String MC_COY_SIGNED_RSA_X = createSigned(MC_COY, TestJwk.RSA_X);
 
-	static final String MC_COY_EXPIRED_SIGNED_OCT_1 = createSigned(MC_COY_EXPIRED, TestJwks.OCT_1);
+	static final String MC_COY_EXPIRED_SIGNED_OCT_1 = createSigned(MC_COY_EXPIRED, TestJwk.OCT_1);
 
+	static class NoKid {
+		static final String MC_COY_SIGNED_RSA_1 = createSignedWithoutKeyId(MC_COY, TestJwk.RSA_1);
+		static final String MC_COY_SIGNED_RSA_2 = createSignedWithoutKeyId(MC_COY, TestJwk.RSA_2);
+		static final String MC_COY_SIGNED_RSA_X = createSignedWithoutKeyId(MC_COY, TestJwk.RSA_X);
+	}
+	
 	static JwtToken create(String subject, String audience, Object... moreClaims) {
 		JwtClaims claims = new JwtClaims();
 
@@ -71,6 +77,13 @@ class TestJwts {
 		JwtToken signedToken = new JwtToken(jwsHeaders, baseJwt.getClaims());
 
 		jwsHeaders.setKeyId(jwk.getKeyId());
+
+		return new JoseJwtProducer().processJwt(signedToken, null, JwsUtils.getSignatureProvider(jwk));
+	}
+	
+	static String createSignedWithoutKeyId(JwtToken baseJwt, JsonWebKey jwk) {
+		JwsHeaders jwsHeaders = new JwsHeaders();
+		JwtToken signedToken = new JwtToken(jwsHeaders, baseJwt.getClaims());
 
 		return new JoseJwtProducer().processJwt(signedToken, null, JwsUtils.getSignatureProvider(jwk));
 	}

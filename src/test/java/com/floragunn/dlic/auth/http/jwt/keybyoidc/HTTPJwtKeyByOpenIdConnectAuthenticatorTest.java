@@ -32,7 +32,7 @@ public class HTTPJwtKeyByOpenIdConnectAuthenticatorTest {
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		mockIdpServer = new MockIpdServer();
+		mockIdpServer = new MockIpdServer(TestJwk.Jwks.ALL);
 	}
 
 	@AfterClass

@@ -45,7 +45,7 @@ public class KeySetRetrieverTest {
 
 	@BeforeClass
 	public static void setUp() throws Exception {
-		mockIdpServer = new MockIpdServer();
+		mockIdpServer = new MockIpdServer(TestJwk.Jwks.ALL);
 	}
 
 	@AfterClass
@@ -76,7 +76,7 @@ public class KeySetRetrieverTest {
 	@Test
 	public void clientCertTest() throws Exception {
 
-		try (MockIpdServer sslMockIdpServer = new MockIpdServer(8084, true) {
+		try (MockIpdServer sslMockIdpServer = new MockIpdServer(TestJwk.Jwks.ALL, 8084, true) {
 			@Override
 			protected void handleDiscoverRequest(HttpRequest request, HttpResponse response, HttpContext context)
 					throws HttpException, IOException {
